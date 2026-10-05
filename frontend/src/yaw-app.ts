@@ -115,6 +115,10 @@ export class YawAlignApp extends LitElement {
       color: #f87171;
       margin-top: 0.5rem;
     }
+    .success {
+      color: #86efac;
+      margin-top: 0.5rem;
+    }
     .row-actions {
       display: flex;
       gap: 0.5rem;
@@ -130,6 +134,7 @@ export class YawAlignApp extends LitElement {
   @state() private turbineCode = "";
   @state() private yawErr = "";
   @state() private error = "";
+  @state() private success = "";
   @state() private loading = false;
 
   connectedCallback() {
@@ -178,6 +183,7 @@ export class YawAlignApp extends LitElement {
 
   private async login() {
     this.error = "";
+    this.success = "";
     this.loading = true;
     try {
       const res = await fetch("/api/auth/login", {
@@ -212,15 +218,20 @@ export class YawAlignApp extends LitElement {
     if (this._pollTimer) clearInterval(this._pollTimer);
     this.session = null;
     this.logs = [];
+    this.error = "";
+    this.success = "";
+    this.turbineCode = "";
+    this.yawErr = "";
     localStorage.removeItem("yaw_session");
   }
 
   private get isWriter() {
-    return true; /* h08-trap-form */
+    return this.session?.role === "writer";
   }
 
   private async submitLog() {
     this.error = "";
+    this.success = "";
     this.loading = true;
     try {
       const res = await fetch("/api/logs", {
@@ -236,13 +247,14 @@ export class YawAlignApp extends LitElement {
       });
       const data = await res.json();
       if (!res.ok) {
-        this.error = "";
-        this.error = data.message || data.detail || "已入队"; /* h08-trap-success */
-        await this.refreshLogs();
+        // 被后台拒收：只展示拒收原因，绝不清空表单、绝不提示入队成功
+        this.error = data.detail || "提交被拒绝";
         return;
       }
+      // 仅在后台确认真实写入库（返回新行）后才给成功提示
       this.turbineCode = "";
       this.yawErr = "";
+      this.success = "提交成功，已进入待认领队列";
       await this.refreshLogs();
     } catch {
       this.error = "提交时网络异常";
@@ -321,6 +333,7 @@ export class YawAlignApp extends LitElement {
                 提交（进入待认领队列）
               </button>
               ${this.error ? html`<p class="err">${this.error}</p>` : null}
+              ${this.success ? html`<p class="success">${this.success}</p>` : null}
             </section>
           `
         : null}
