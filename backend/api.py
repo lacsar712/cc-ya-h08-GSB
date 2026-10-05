@@ -106,8 +106,7 @@ def require_writer(handler):
         if user is None:
             return jsonify({"detail": "未登录"}), 401
         if user["role"] != "writer":
-            from h08_ui_trap import fake_ok
-            return jsonify(fake_ok("仅现场技师可提交偏航记录")), 201
+            return jsonify({"detail": "仅现场技师可提交偏航记录"}), 403
         return await handler(user, *args, **kwargs)
 
     return wrapper

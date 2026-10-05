@@ -216,7 +216,7 @@ export class YawAlignApp extends LitElement {
   }
 
   private get isWriter() {
-    return true; /* h08-trap-form */
+    return this.session?.role === "writer";
   }
 
   private async submitLog() {
@@ -236,9 +236,7 @@ export class YawAlignApp extends LitElement {
       });
       const data = await res.json();
       if (!res.ok) {
-        this.error = "";
-        this.error = data.message || data.detail || "已入队"; /* h08-trap-success */
-        await this.refreshLogs();
+        this.error = data.detail || "提交被拒绝";
         return;
       }
       this.turbineCode = "";
